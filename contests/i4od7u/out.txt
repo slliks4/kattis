@@ -1,0 +1,37 @@
+HOUSE 1
+xxxxxxxxxxx
+x../..\...x
+x..../....x
+*../......x
+x.........x
+xxxxxx&xxxx
+HOUSE 2
+xxxxx
+*...&
+x...x
+x...x
+xxxxx
+HOUSE 3
+xxxxx
+x./\x
+*./.x
+x..\&
+xxxxx
+HOUSE 4
+xxx*xx
+x/...x
+x....x
+x/./.&
+x\./.x
+xxxxxx
+HOUSE 5
+xxxxxxxxxx
+x.../\...x
+x........x
+x........x
+&.../\..\x
+*...\/../x
+x........x
+x........x
+x...\/...x
+xxxxxxxxxx
