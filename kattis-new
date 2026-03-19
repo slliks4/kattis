@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+set -e
+
+use_link=false
+
+if [ "$1" = "-l" ]; then
+    use_link=true
+    shift
+fi
+
+input="$1"
+
+if [ -z "$input" ]; then
+    echo "Usage:" >&2
+    echo "  $0 <problem-name>" >&2
+    echo "  $0 -l <kattis-url>" >&2
+    exit 1
+fi
+
+# ==========================
+# Base directory
+# ==========================
+KATTIS_DIR="${KATTIS_DIR:-$HOME/kattis}"
+mkdir -p "$KATTIS_DIR"
+
+# ==========================
+# Extract name
+# ==========================
+if $use_link; then
+    input="${input%/}"
+    input="${input%%\?*}"
+    name="${input##*/}"
+else
+    name="$input"
+fi
+
+problem_dir="$KATTIS_DIR/$name"
+url="https://open.kattis.com/problems/$name"
+
+# ==========================
+# Validate problem
+# ==========================
+status=$(curl -s -o /dev/null -w "%{http_code}" -L "$url")
+
+if [ "$status" != "200" ]; then
+    echo "Problem does not exist" >&2
+    exit 1
+fi
+
+# ==========================
+# Create directory
+# ==========================
+mkdir -p "$problem_dir"
+
+# ==========================
+# Solution file
+# ==========================
+if [ -f "$problem_dir/soln.py" ]; then
+    echo "soln.py already exists - skipping" >&2
+elif [ -f "${name}.py" ]; then
+    mv "${name}.py" "$problem_dir/soln.py"
+else
+    touch "$problem_dir/soln.py"
+fi
+
+# ==========================
+# README
+# ==========================
+[ -f "$problem_dir/README.md" ] || echo "$url" > "$problem_dir/README.md"
+
+# ==========================
+# Samples
+# ==========================
+samples_url="https://open.kattis.com/problems/$name/file/statement/samples.zip"
+
+tmp_zip="$problem_dir/samples.zip"
+tmp_dir="$problem_dir/_samples"
+
+if curl -fsSL -L "$samples_url" -o "$tmp_zip"; then
+    mkdir -p "$tmp_dir"
+    unzip -q "$tmp_zip" -d "$tmp_dir"
+
+    i=1
+    found=false
+
+    for infile in "$tmp_dir"/*.in; do
+        [ -e "$infile" ] || continue
+
+        base="$(basename "$infile" .in)"
+        outfile="$tmp_dir/$base.ans"
+
+        if [ -f "$outfile" ]; then
+            cp "$infile" "$problem_dir/in$i"
+            cp "$outfile" "$problem_dir/out$i"
+            i=$((i + 1))
+            found=true
+        fi
+    done
+
+    rm -rf "$tmp_zip" "$tmp_dir"
+
+    if ! $found; then
+        echo "No valid samples found, creating base in/out" >&2
+        touch "$problem_dir/in" "$problem_dir/out"
+    fi
+else
+    echo "Sample download failed, creating base in/out" >&2
+    touch "$problem_dir/in" "$problem_dir/out"
+fi
+
+echo "Setup complete for $name" >&2
+
+# ==========================
+# Output for cd
+# ==========================
+echo "$problem_dir"
