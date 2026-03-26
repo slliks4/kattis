@@ -34,7 +34,7 @@ else
     name="$input"
 fi
 
-problem_dir="$KATTIS_DIR/$name"
+problem_dir="$KATTIS_DIR/problems/$name"
 url="https://open.kattis.com/problems/$name"
 
 # ==========================
