@@ -1,0 +1,35 @@
+# ==========================
+# Problem-solving workspace
+# ==========================
+problems/
+problem/
+
+# Context / scratch sessions
+contexts/
+context/
+
+# Temp / misc
+tmp/
+scratch/
+
+# ==========================
+# Language build artifacts
+# ==========================
+
+# Python
+__pycache__/
+*.pyc
+
+# Java
+*.class
+
+# C / compiled
+*.out
+*.o
+
+# ==========================
+# General
+# ==========================
+.env
+*.log
+.cache/
