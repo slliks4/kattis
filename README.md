@@ -97,14 +97,18 @@ This will:
 
 ## Notes
 
-* Problem directories are intended to be local and may be ignored via `.gitignore`
-* This tool is designed for fast setup, not submission automation
-* Java solutions must use:
-
+- Problem directories are intended to be local and may be ignored via `.gitignore`
+- This tool is designed for fast setup, not submission automation
+- Java solutions must use:
   ```java
   public class soln
-  ```
+````
+* Do not remove the shebang (`#!/usr/bin/env python3`) from Python files if you want to run them using:
 
+  ```bash
+  ./test
+  ```
+````
 ---
 
 ## License

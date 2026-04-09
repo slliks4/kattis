@@ -197,7 +197,22 @@ for infile in in*; do
 
     echo "Test \$num:"
 
-    if $run_cmd < "\$infile" | diff -u - "\$outfile"; then
+    # Try normal execution first
+    if $run_cmd < "\$infile" > /tmp/kattis_out 2>/dev/null; then
+        :
+    else
+        # Fallback for Python if shebang is missing
+        if [ -f "soln.py" ]; then
+            python3 soln.py < "\$infile" > /tmp/kattis_out
+        else
+            echo "Execution failed"
+            failed=\$((failed+1))
+            echo "----------------------"
+            continue
+        fi
+    fi
+
+    if diff -u /tmp/kattis_out "\$outfile"; then
         echo "PASS"
         passed=\$((passed+1))
     else
@@ -207,6 +222,8 @@ for infile in in*; do
 
     echo "----------------------"
 done
+
+rm -f /tmp/kattis_out
 
 echo "Passed: \$passed"
 echo "Failed: \$failed"
