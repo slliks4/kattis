@@ -6,37 +6,35 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "Current shell: $SHELL"
 
 # ==========================
-# Dependency installers
+# Dependency check (NO install)
 # ==========================
-ensure_pkg_pacman() {
-    if ! pacman -Qi "$1" >/dev/null 2>&1; then
-        echo "Installing missing dependency: $1 (pacman)"
-        sudo pacman -S --noconfirm "$1"
+check_dep() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "Missing dependency: $1"
+        return 1
     fi
+    return 0
 }
 
-ensure_pkg_brew() {
-    if ! brew list "$1" >/dev/null 2>&1; then
-        echo "Installing missing dependency: $1 (brew)"
-        brew install "$1"
+missing=false
+
+for dep in curl unzip diff; do
+    if ! check_dep "$dep"; then
+        missing=true
     fi
-}
+done
 
-# ==========================
-# Detect package manager
-# ==========================
-if command -v pacman >/dev/null 2>&1; then
-    ensure_pkg_pacman curl
-    ensure_pkg_pacman unzip
-
-elif command -v brew >/dev/null 2>&1; then
-    ensure_pkg_brew curl
-    ensure_pkg_brew unzip
-
-else
-    echo "No supported package manager found."
-    echo "Please ensure curl and unzip are installed."
-    echo "Continuing installation..."
+if $missing; then
+    echo ""
+    echo "Some dependencies are missing."
+    echo "Please install them manually:"
+    echo "  Required: curl, unzip, diff"
+    echo ""
+    echo "Examples:"
+    echo "  Arch: sudo pacman -S curl unzip diffutils"
+    echo "  macOS: brew install curl unzip diffutils"
+    echo ""
+    echo "Continuing installation anyway..."
 fi
 
 # ==========================
@@ -44,6 +42,8 @@ fi
 # ==========================
 mkdir -p "$HOME/.local/bin"
 ln -sf "$SCRIPT_DIR/kattis-new" "$HOME/.local/bin/knew"
+
+echo "Installed knew -> ~/.local/bin/knew"
 
 # ==========================
 # Detect shell config file
@@ -70,18 +70,23 @@ echo "Using config: $SHELL_RC"
 # ==========================
 # Ensure PATH
 # ==========================
-if ! grep -q '.local/bin' "$SHELL_RC" 2>/dev/null; then
+if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$SHELL_RC" 2>/dev/null; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL_RC"
-    echo "Added ~/.local/bin to $SHELL_RC"
+    echo "Added ~/.local/bin to PATH in $SHELL_RC"
 fi
 
 # ==========================
 # Set default KATTIS_DIR
 # ==========================
-if ! grep -q "KATTIS_DIR" "$SHELL_RC" 2>/dev/null; then
+if ! grep -q "export KATTIS_DIR=" "$SHELL_RC" 2>/dev/null; then
     echo 'export KATTIS_DIR="$HOME/kattis"' >> "$SHELL_RC"
     echo "Added KATTIS_DIR to $SHELL_RC"
 fi
 
-echo "Installed kattis-new as 'knew'"
-echo "Restart your shell or run: source $SHELL_RC"
+# ==========================
+# Final message
+# ==========================
+echo ""
+echo "Installation complete."
+echo "Restart your shell or run:"
+echo "  source $SHELL_RC"

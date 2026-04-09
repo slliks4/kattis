@@ -18,6 +18,20 @@ if [ -z "$input" ]; then
 fi
 
 # ==========================
+# Dependency check
+# ==========================
+require() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "Missing dependency: $1" >&2
+        exit 1
+    fi
+}
+
+require curl
+require unzip
+require diff
+
+# ==========================
 # Base directory
 # ==========================
 KATTIS_DIR="${KATTIS_DIR:-$HOME/kattis}"
@@ -53,15 +67,68 @@ fi
 mkdir -p "$problem_dir"
 
 # ==========================
-# Solution file
+# Language selection
 # ==========================
-if [ -f "$problem_dir/soln.py" ]; then
-    echo "soln.py already exists - skipping" >&2
-elif [ -f "${name}.py" ]; then
-    mv "${name}.py" "$problem_dir/soln.py"
+echo "Select language:"
+echo "1) Python"
+echo "2) Java"
+read -rp "Choice [1-2]: " choice
+
+case "$choice" in
+    1)
+        ext="py"
+        run_cmd='./soln.py'
+        require python3
+        ;;
+    2)
+        ext="java"
+        run_cmd='javac soln.java && java soln'
+        require javac
+        require java
+        ;;
+    *)
+        echo "Invalid choice, defaulting to Python"
+        ext="py"
+        run_cmd='./soln.py'
+        require python3
+        ;;
+esac
+
+# ==========================
+# Solution file (with template)
+# ==========================
+soln_file="$problem_dir/soln.$ext"
+
+if [ -f "$soln_file" ]; then
+    echo "soln.$ext already exists - skipping" >&2
+elif [ -f "${name}.$ext" ]; then
+    mv "${name}.$ext" "$soln_file"
 else
-    touch "$problem_dir/soln.py"
+    if [ "$ext" = "py" ]; then
+        cat <<EOF > "$soln_file"
+#!/usr/bin/env python3
+
+def main():
+    # input code here
+    pass
+
+
+if __name__ == "__main__":
+    main()
+EOF
+chmod +x "$soln_file"
+elif [ "$ext" = "java" ]; then
+    cat <<EOF > "$soln_file"
+import java.util.*;
+
+public class soln {
+    public static void main(String[] args) {
+        // input code here
+    }
+}
+EOF
 fi
+    fi
 
 # ==========================
 # README
@@ -108,9 +175,44 @@ else
     touch "$problem_dir/in" "$problem_dir/out"
 fi
 
-echo "Setup complete for $name" >&2
+# ==========================
+# Test runner
+# ==========================
+test_script="$problem_dir/test"
 
-# ==========================
-# Output for cd
-# ==========================
+cat <<EOF > "$test_script"
+#!/usr/bin/env bash
+set -e
+
+echo "Running tests..."
+
+passed=0
+failed=0
+
+for infile in in*; do
+    [ -e "\$infile" ] || continue
+
+    num=\${infile#in}
+    outfile="out\$num"
+
+    echo "Test \$num:"
+
+    if $run_cmd < "\$infile" | diff -u - "\$outfile"; then
+        echo "PASS"
+        passed=\$((passed+1))
+    else
+        echo "FAIL"
+        failed=\$((failed+1))
+    fi
+
+    echo "----------------------"
+done
+
+echo "Passed: \$passed"
+echo "Failed: \$failed"
+EOF
+
+chmod +x "$test_script"
+
+echo "Setup complete for $name" >&2
 echo "$problem_dir"
